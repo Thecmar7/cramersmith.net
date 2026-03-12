@@ -1,0 +1,61 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ── card positions ── */
+.area-hero       { grid-column: 1 / 4; grid-row: 1; }
+.area-links      { grid-column: 4;     grid-row: 1 / 3; } /* spans both rows */
+.area-about      { grid-column: 1 / 4; grid-row: 2; }
+.area-experience { grid-column: 1 / 5; grid-row: 3; }
+
+/* ── base card ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  overflow: hidden;
+  position: relative;
+  cursor: default;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  border-color: #3a3a3a;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.card.clickable {
+  cursor: pointer;
+}
+
+/* ── tablet ── */
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .area-hero       { grid-column: 1 / 3; grid-row: 1; }
+  .area-links      { grid-column: 1 / 3; grid-row: 2; }
+  .area-about      { grid-column: 1 / 3; grid-row: 3; }
+  .area-experience { grid-column: 1 / 3; grid-row: 4; }
+}
+
+/* ── mobile ── */
+@media (max-width: 540px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .card {
+    padding: 16px;
+    border-radius: 14px;
+  }
+  .area-hero,
+  .area-links,
+  .area-about,
+  .area-experience { grid-column: 1; grid-row: auto; }
+}

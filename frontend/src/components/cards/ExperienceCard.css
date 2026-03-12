@@ -1,0 +1,93 @@
+.experience-columns {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 40px;
+  align-items: start;
+}
+
+.experience-section,
+.education-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.jobs {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.job {
+  border-left: 2px solid var(--border);
+  padding-left: 20px;
+  transition: border-color 0.2s;
+}
+
+.job:hover {
+  border-color: var(--accent);
+}
+
+.job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.job-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.job-company {
+  font-size: 0.875rem;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+.job-location {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.job-period {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.job-bullets {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.job-bullets li {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.job-bullets li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--border);
+}
+
+@media (max-width: 900px) {
+  .experience-columns {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
