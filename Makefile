@@ -53,3 +53,10 @@ login:
 clean:
 	rm -f server
 	rm -rf frontend/dist
+
+# Run all DB migrations against the RDS instance.
+# Requires psql installed locally. DB_URL is fetched from SSM.
+migrate:
+	$(eval DB_URL := $(shell aws ssm get-parameter --region $(REGION) --name /cramersmith/db-url --with-decryption --query Parameter.Value --output text))
+	psql "$(DB_URL)" -f db/migrations/001_create_posts.sql
+	psql "$(DB_URL)" -f db/migrations/002_create_visits.sql

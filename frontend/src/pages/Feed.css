@@ -1,0 +1,103 @@
+.feed {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.feed-header {
+  margin-bottom: 32px;
+}
+
+.feed-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.feed-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.feed-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  padding: 40px 0;
+  text-align: center;
+}
+
+.feed-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.feed-post {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  transition: border-color 0.15s;
+}
+
+.feed-post:hover {
+  border-color: #3a3a3a;
+}
+
+.feed-post-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.feed-post-type {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.feed-post--thought .feed-post-type {
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.1);
+  border-color: rgba(167, 139, 250, 0.2);
+}
+
+.feed-post-time {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.feed-post-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  margin-bottom: 8px;
+  transition: color 0.15s;
+}
+
+.feed-post-link:hover {
+  color: var(--accent);
+}
+
+.feed-post-link-arrow {
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.feed-post-content {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}

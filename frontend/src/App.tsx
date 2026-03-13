@@ -1,16 +1,18 @@
-import './components/BentoGrid.css'
-import HeroCard from './components/cards/HeroCard'
-import AboutCard from './components/cards/AboutCard'
-import ExperienceCard from './components/cards/ExperienceCard'
-import LinksCard from './components/cards/LinksCard'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Nav from './components/Nav'
+import Portfolio from './pages/Portfolio'
+import Feed from './pages/Feed'
+import Admin from './pages/Admin'
 
 export default function App() {
   return (
-    <div className="grid">
-      <HeroCard />
-      <LinksCard />
-      <AboutCard />
-      <ExperienceCard />
-    </div>
+    <BrowserRouter>
+      <Nav />
+      <Routes>
+        <Route path="/"      element={<Portfolio />} />
+        <Route path="/feed"  element={<Feed />} />
+        <Route path="/admin" element={<Admin />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
