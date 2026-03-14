@@ -23,26 +23,41 @@ Browser → cramersmith.net → App Runner → Go binary
 ```
 web/
 ├── main.go                        # Go server entry point
-├── go.mod                         # Go module (module: cramersmith.net)
+├── go.mod / go.sum                # Go module (module: cramersmith.net)
 ├── Dockerfile                     # 3-stage build (see below)
+├── Makefile                       # dev / build / deploy / migrate shortcuts
 ├── .gitignore
-├── NOTES.md                       # IDs and deployment commands
 ├── HOWTO.md                       # This file
+├── db/
+│   ├── migrations/
+│   │   ├── 001_create_posts.sql   # posts table
+│   │   └── 002_create_visits.sql  # visit counter table
+│   └── queries/
+│       ├── posts.sql              # ListPosts, CreatePost, DeletePost
+│       └── visits.sql             # IncrementAndGetVisits
 ├── internal/
-│   └── api/
-│       └── router.go              # API route handlers
+│   ├── api/
+│   │   └── router.go              # API route handlers
+│   ├── auth/
+│   │   └── auth.go                # Admin password middleware (reads from SSM)
+│   └── store/
+│       └── store.go               # DB connection pool + all queries
 └── frontend/                      # React + TypeScript (Vite)
     ├── src/
-    │   ├── App.tsx                # Root component, wires up the grid
+    │   ├── App.tsx                # Root: BrowserRouter + Nav + Routes
     │   ├── index.css              # Design system (CSS variables)
-    │   └── components/
-    │       ├── BentoGrid.css      # Grid layout + card positioning
-    │       └── cards/
-    │           ├── HeroCard.tsx   # Name + tagline
-    │           ├── AboutCard.tsx  # Elevator pitch
-    │           ├── ExperienceCard.tsx  # Work history
-    │           ├── LinkCard.tsx   # Reusable GitHub / LinkedIn card
-    │           └── ResumeCard.tsx # Resume PDF download
+    │   ├── components/
+    │   │   ├── Nav.tsx / Nav.css  # Top nav bar (Portfolio / Feed links)
+    │   │   ├── BentoGrid.css      # Grid layout + card positioning
+    │   │   └── cards/
+    │   │       ├── HeroCard.tsx   # Name + tagline
+    │   │       ├── AboutCard.tsx  # Elevator pitch
+    │   │       ├── ExperienceCard.tsx  # Work history
+    │   │       └── LinksCard.tsx  # GitHub, LinkedIn, Resume (combined)
+    │   └── pages/
+    │       ├── Portfolio.tsx      # Bento grid (the home page)
+    │       ├── Feed.tsx / Feed.css     # Public microblog feed
+    │       └── Admin.tsx / Admin.css   # Password-gated post editor
     └── package.json
 ```
 
@@ -83,11 +98,13 @@ FROM golang:1.25-alpine AS backend
 # runs `go build` → produces a single static binary called `server`
 ```
 
-**Stage 3 — Scratch (final image):**
+**Stage 3 — Alpine (final image):**
 ```dockerfile
-FROM scratch
+FROM alpine:3.21
+RUN apk add --no-cache ca-certificates
 # copies only the `server` binary
-# final image is ~10MB, no OS, no shell, nothing else
+# Alpine is used instead of scratch because the AWS SDK makes HTTPS calls
+# to SSM at startup, which requires CA certificates to verify SSL.
 ```
 
 The `--platform linux/amd64` flag is required when building on a Mac (which is ARM) for deployment to App Runner (which runs on x86).
@@ -101,6 +118,8 @@ The `--platform linux/amd64` flag is required when building on a Mac (which is A
 | **ECR** (Elastic Container Registry) | Stores your Docker image | AWS Console → search "ECR" |
 | **App Runner** | Runs your container, handles HTTPS, auto-restarts | AWS Console → search "App Runner" |
 | **Route53** | DNS — points cramersmith.net to App Runner | AWS Console → search "Route 53" → Hosted zones |
+| **RDS** (PostgreSQL) | Stores blog posts and visit counter | AWS Console → search "RDS" |
+| **SSM Parameter Store** | Stores secrets (DB URL, admin password) encrypted at rest | AWS Console → search "Systems Manager" → Parameter Store |
 | **IAM** | Manages permissions | AWS Console → search "IAM" |
 
 No EC2, no load balancer, no certificate manager setup needed. App Runner handles HTTPS/SSL automatically when you associate a custom domain.
@@ -190,7 +209,75 @@ aws apprunner associate-custom-domain \
 ```
 This tells App Runner to provision an SSL certificate for `cramersmith.net` and `www.cramersmith.net`. It returns DNS records that need to be added to Route53 for validation.
 
-### 7. Update Route53 DNS
+### 7. RDS PostgreSQL Database
+Created a `db.t3.micro` PostgreSQL instance for storing blog posts and the visit counter.
+
+```bash
+aws rds create-db-instance \
+  --db-instance-identifier cramersmith-db \
+  --db-instance-class db.t3.micro \
+  --engine postgres \
+  --master-username cramersmith \
+  --master-user-password <password> \
+  --allocated-storage 20 \
+  --publicly-accessible \
+  --region us-west-2
+```
+
+DB endpoint: `YOUR-RDS-ENDPOINT`
+
+The DB URL (with credentials) is stored in SSM, not in the code — see below.
+
+### 8. SSM Parameter Store (Secrets)
+Secrets are stored as `SecureString` in SSM Parameter Store. They are encrypted at rest and never appear in code, environment variables, or the Docker image.
+
+Two parameters:
+- `/cramersmith/admin-password` — password for the `/admin` page
+- `/cramersmith/db-url` — full PostgreSQL connection string
+
+```bash
+# Store the admin password
+aws ssm put-parameter \
+  --region us-west-2 \
+  --name /cramersmith/admin-password \
+  --value "your-password" \
+  --type SecureString
+
+# Store the DB URL
+aws ssm put-parameter \
+  --region us-west-2 \
+  --name /cramersmith/db-url \
+  --value "postgres://cramersmith:<pass>@<host>:5432/cramersmith?sslmode=require" \
+  --type SecureString
+```
+
+The running container fetches these at startup via the AWS SDK. This requires the App Runner **instance role** (separate from the ECR access role) to have SSM read permissions:
+
+```bash
+# Create the instance role
+aws iam create-role \
+  --role-name AppRunnerInstanceRole \
+  --assume-role-policy-document '{ "Statement": [{ "Effect": "Allow",
+    "Principal": {"Service": "tasks.apprunner.amazonaws.com"},
+    "Action": "sts:AssumeRole" }] }'
+
+aws iam attach-role-policy \
+  --role-name AppRunnerInstanceRole \
+  --policy-arn arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+```
+
+Then attach it to the App Runner service in the AWS Console: App Runner → cramersmith-net → Configuration → Security → Instance role → `AppRunnerInstanceRole`.
+
+### 9. Run DB Migrations
+The SQL schema lives in `db/migrations/`. Run these once to set up the tables:
+
+```bash
+make migrate
+```
+
+This fetches the DB URL from SSM automatically and runs both migration files. Requires `psql` installed (`brew install postgresql`).
+
+### 10. Update Route53 DNS
 The old site was pointing to an EC2 IP (`35.83.52.113`). Those records were replaced.
 
 Records added:
@@ -200,32 +287,50 @@ Records added:
 
 ---
 
+## The Mini Blog (Feed)
+
+A personal microblog where only you can post. Public readers see the feed; you manage it from a hidden admin page.
+
+### How it works
+
+- **`/feed`** — public page listing all posts, newest first
+- **`/admin`** — password-protected page to create and delete posts
+
+Posts have two types:
+- **Thought** — just text, like a tweet
+- **Link** — a URL with an optional title and optional comment
+
+### Posting
+
+1. Go to `cramersmith.net/admin`
+2. Enter your admin password (stored in SSM, not in the code)
+3. Select Thought or Link, fill in the fields, hit Post
+4. Your post appears on `/feed` immediately
+
+The password is saved in your browser's localStorage so you don't have to re-enter it.
+
+### SQL Queries
+
+All database queries are saved as readable SQL files in `db/queries/`. This is intentional — you can open them and read exactly what the app is doing to the database at any time.
+
+---
+
 ## How to Redeploy (Future Updates)
 
-Every time you change the site, run this to push a new version live:
+Every time you change the site, just run:
 
 ```bash
-# 1. Build the React frontend
-npm run build --prefix frontend
-
-# 2. Build the Docker image
-docker build --platform linux/amd64 -t cramersmith-net .
-
-# 3. Re-authenticate with ECR (if your token has expired — valid 12 hours)
-aws ecr get-login-password --region us-west-2 | \
-  docker login --username AWS --password-stdin \
-  YOUR-AWS-ACCOUNT-ID.dkr.ecr.us-west-2.amazonaws.com
-
-# 4. Tag and push
-docker tag cramersmith-net:latest \
-  YOUR-ECR-URI:latest
-docker push \
-  YOUR-ECR-URI:latest
-
-# App Runner detects the new image and redeploys automatically.
-# Takes about 2-3 minutes. Watch progress at:
-# AWS Console → App Runner → cramersmith-net → Activity
+make deploy
 ```
+
+That's it. It handles ECR login, frontend build, Docker build, and push. App Runner redeploys automatically when it sees a new image (~2–3 minutes).
+
+Watch the rollout:
+```bash
+make status
+```
+
+Or in the AWS Console: App Runner → cramersmith-net → Activity.
 
 ---
 
@@ -239,12 +344,15 @@ docker push \
 | App Runner Service ARN | `YOUR-APP-RUNNER-ARN` |
 | App Runner default URL | `YOUR-APP-RUNNER-URL` |
 | Route53 Hosted Zone ID | `YOUR-HOSTED-ZONE-ID` |
+| RDS Endpoint | `YOUR-RDS-ENDPOINT` |
+| SSM: admin password | `/cramersmith/admin-password` |
+| SSM: DB URL | `/cramersmith/db-url` |
+| IAM ECR role | `AppRunnerECRAccessRole` (used by build.apprunner.amazonaws.com) |
+| IAM instance role | `AppRunnerInstanceRole` (used by tasks.apprunner.amazonaws.com — allows SSM access) |
 
 ---
 
 ## Still To Do
 
-- [ ] Fill in real elevator pitch in `frontend/src/components/cards/AboutCard.tsx`
-- [ ] Fill in real work history in `frontend/src/components/cards/ExperienceCard.tsx`
-- [ ] Set GitHub username + LinkedIn URL in `frontend/src/App.tsx` (top of file)
-- [ ] Add resume PDF → drop `resume.pdf` in `frontend/public/`, set `resumeAvailable = true` in `ResumeCard.tsx`
+- [ ] Add resume PDF → drop `resume.pdf` in `frontend/public/`, set `resumeAvailable = true` in `frontend/src/components/cards/LinksCard.tsx`
+- [ ] Add visit counter display to the Hero card (fetch `GET /api/visits`, render the count)
