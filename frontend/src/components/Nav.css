@@ -38,3 +38,18 @@
   border-color: var(--border);
   background: var(--surface);
 }
+
+.theme-toggle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  line-height: 1;
+  transition: border-color 0.15s;
+}
+
+.theme-toggle:hover {
+  border-color: #3a3a3a;
+}

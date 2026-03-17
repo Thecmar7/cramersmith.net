@@ -3,7 +3,7 @@ import './ResumeCard.css'
 
 export default function ResumeCard() {
   // TODO: Replace href with the actual path to your resume PDF once added
-  const resumeAvailable = false
+  const resumeAvailable = true
 
   return (
     <motion.div

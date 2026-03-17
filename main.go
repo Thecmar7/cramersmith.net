@@ -13,6 +13,7 @@ import (
 
 	"cramersmith.net/internal/api"
 	"cramersmith.net/internal/auth"
+	"cramersmith.net/internal/bluesky"
 	"cramersmith.net/internal/store"
 )
 
@@ -58,6 +59,23 @@ func main() {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 
+	// Load Bluesky credentials from SSM (optional — skips cross-posting if missing)
+	var bskyClient *bluesky.Client
+	bskyHandle, err1 := ssmClient.GetParameter(ctx, &ssm.GetParameterInput{
+		Name:           strPtr("/cramersmith/bluesky-handle"),
+		WithDecryption: boolPtr(true),
+	})
+	bskyPass, err2 := ssmClient.GetParameter(ctx, &ssm.GetParameterInput{
+		Name:           strPtr("/cramersmith/bluesky-app-password"),
+		WithDecryption: boolPtr(true),
+	})
+	if err1 != nil || err2 != nil {
+		log.Println("bluesky credentials not found in SSM — cross-posting disabled")
+	} else {
+		bskyClient = bluesky.New(*bskyHandle.Parameter.Value, *bskyPass.Parameter.Value)
+		log.Println("bluesky cross-posting enabled")
+	}
+
 	// Set up routes
 	distFS, err := fs.Sub(staticFiles, "frontend/dist")
 	if err != nil {
@@ -65,7 +83,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/api/", http.StripPrefix("/api", api.NewRouter(s, adminAuth)))
+	mux.Handle("/api/", http.StripPrefix("/api", api.NewRouter(s, adminAuth, bskyClient)))
 	mux.Handle("/", spaHandler(distFS))
 
 	log.Printf("listening on :%s", port)

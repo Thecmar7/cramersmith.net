@@ -13,6 +13,12 @@ const LinkedInIcon = () => (
   </svg>
 )
 
+const BlueskyIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 600 530" fill="currentColor">
+    <path d="M135.72 44.03C202.216 93.951 273.74 195.17 300 249.49c26.262-54.316 97.782-155.54 164.28-205.46C512.26 8.009 590-19.862 590 68.825c0 17.712-10.155 148.79-16.111 170.07-20.703 73.984-96.144 92.854-163.25 81.433 117.3 19.964 147.14 86.092 82.697 152.22-122.39 125.59-175.91-31.511-189.63-71.766-2.514-7.38-3.69-10.832-3.708-7.896-.017-2.936-1.193.516-3.707 7.896-13.714 40.255-67.233 197.36-189.63 71.766-64.444-66.128-34.605-132.26 82.697-152.22-67.108 11.421-142.55-7.45-163.25-81.433C20.15 217.615 10 86.536 10 68.825c0-88.687 77.742-60.816 125.72-24.795z" />
+  </svg>
+)
+
 const ResumeIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -23,9 +29,16 @@ const ResumeIcon = () => (
   </svg>
 )
 
-const resumeAvailable = false
+const resumeAvailable = true
 
 const links = [
+  {
+    label: 'Bluesky',
+    sublabel: '@cramandcheese.bsky.social',
+    href: 'https://bsky.app/profile/cramandcheese.bsky.social',
+    icon: <BlueskyIcon />,
+    enabled: true,
+  },
   {
     label: 'GitHub',
     sublabel: '@Thecmar7',

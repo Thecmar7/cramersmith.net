@@ -12,6 +12,17 @@
   --gap:        12px;
 }
 
+[data-theme="light"] {
+  --bg:         #f5f5f5;
+  --surface:    #ffffff;
+  --surface-2:  #efefef;
+  --border:     #e0e0e0;
+  --accent:     #0891b2;
+  --accent-dim: rgba(8, 145, 178, 0.10);
+  --text:       #111111;
+  --text-muted: #888;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;

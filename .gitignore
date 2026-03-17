@@ -6,6 +6,9 @@ server
 frontend/node_modules/
 frontend/dist/
 
+# Resume (kept off GitHub intentionally)
+frontend/public/resume.pdf
+
 # Environment
 .env
 .env.*

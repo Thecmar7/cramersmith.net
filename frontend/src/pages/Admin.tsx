@@ -19,6 +19,7 @@ export default function Admin() {
   const [url, setUrl]           = useState('')
   const [urlTitle, setUrlTitle] = useState('')
   const [status, setStatus]     = useState('')
+  const [postToBsky, setPostToBsky] = useState(false)
 
   useEffect(() => {
     if (password) loadPosts()
@@ -45,7 +46,7 @@ export default function Admin() {
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setStatus('Posting...')
-    const body: Record<string, string | null> = { type, content }
+    const body: Record<string, string | null | boolean> = { type, content, post_to_bluesky: postToBsky }
     if (type === 'link') {
       body.url       = url || null
       body.url_title = urlTitle || null
@@ -59,8 +60,8 @@ export default function Admin() {
       body: JSON.stringify(body),
     })
     if (r.ok) {
-      setContent(''); setUrl(''); setUrlTitle('')
-      setStatus('Posted!')
+      setContent(''); setUrl(''); setUrlTitle(''); setPostToBsky(false)
+      setStatus(postToBsky ? 'Posted! (+ Bluesky)' : 'Posted!')
       loadPosts()
       setTimeout(() => setStatus(''), 2000)
     } else {
@@ -145,6 +146,15 @@ export default function Admin() {
           rows={4}
           required={type === 'thought'}
         />
+
+        <label className="admin-bsky-label">
+          <input
+            type="checkbox"
+            checked={postToBsky}
+            onChange={e => setPostToBsky(e.target.checked)}
+          />
+          Post to Bluesky
+        </label>
 
         <button className="admin-btn admin-btn--submit" type="submit">Post</button>
         {status && <p className="admin-status">{status}</p>}
