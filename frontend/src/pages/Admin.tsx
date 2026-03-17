@@ -11,7 +11,7 @@ interface Post {
 }
 
 export default function Admin() {
-  const [password, setPassword] = useState(() => localStorage.getItem('adminKey') || '')
+  const [password, setPassword] = useState(() => sessionStorage.getItem('adminKey') || '')
   const [authed, setAuthed]     = useState(false)
   const [posts, setPosts]       = useState<Post[]>([])
   const [type, setType]         = useState<'thought' | 'link'>('thought')
@@ -26,7 +26,7 @@ export default function Admin() {
   }, [])
 
   function savePassword() {
-    localStorage.setItem('adminKey', password)
+    sessionStorage.setItem('adminKey', password)
     loadPosts()
   }
 

@@ -6,23 +6,77 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"sync"
+	"time"
 
 	"cramersmith.net/internal/auth"
 	"cramersmith.net/internal/bluesky"
 	"cramersmith.net/internal/store"
 )
 
+// rateLimiter tracks failed auth attempts per IP and blocks after 10 failures in 15 minutes.
+type rateLimiter struct {
+	mu      sync.Mutex
+	hits    map[string][]time.Time
+}
+
+func newRateLimiter() *rateLimiter {
+	return &rateLimiter{hits: make(map[string][]time.Time)}
+}
+
+func (rl *rateLimiter) allow(ip string) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+
+	cutoff := time.Now().Add(-15 * time.Minute)
+	var recent []time.Time
+	for _, t := range rl.hits[ip] {
+		if t.After(cutoff) {
+			recent = append(recent, t)
+		}
+	}
+	rl.hits[ip] = recent
+
+	if len(recent) >= 10 {
+		return false
+	}
+	rl.hits[ip] = append(rl.hits[ip], time.Now())
+	return true
+}
+
 // NewRouter returns a mux with all API routes registered.
 func NewRouter(s *store.Store, a *auth.Auth, bsky *bluesky.Client) http.Handler {
 	mux := http.NewServeMux()
+	rl := newRateLimiter()
 
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("GET /visits", handleVisits(s))
 	mux.HandleFunc("GET /posts", handleListPosts(s))
-	mux.Handle("POST /posts", a.Middleware(http.HandlerFunc(handleCreatePost(s, bsky))))
-	mux.Handle("DELETE /posts/{id}", a.Middleware(http.HandlerFunc(handleDeletePost(s))))
+	mux.Handle("POST /posts", rl.Middleware(a.Middleware(http.HandlerFunc(handleCreatePost(s, bsky)))))
+	mux.Handle("DELETE /posts/{id}", rl.Middleware(a.Middleware(http.HandlerFunc(handleDeletePost(s)))))
 
-	return mux
+	return securityHeaders(mux)
+}
+
+func (rl *rateLimiter) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip := r.RemoteAddr
+		if !rl.allow(ip) {
+			http.Error(w, "too many requests", http.StatusTooManyRequests)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		next.ServeHTTP(w, r)
+	})
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
