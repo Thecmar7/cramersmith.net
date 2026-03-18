@@ -7,7 +7,8 @@
 }
 
 /* ── card positions ── */
-.area-photo      { grid-column: 1;     grid-row: 1 / 3; padding: 0; }
+.area-photo      { grid-column: 1;     grid-row: 1 / 3; }
+.card.area-photo { padding: 3px; }
 .area-hero       { grid-column: 2 / 4; grid-row: 1; }
 .area-links      { grid-column: 4;     grid-row: 1 / 3; }
 .area-about      { grid-column: 2 / 4; grid-row: 2; }
@@ -18,7 +19,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: var(--radius);
+  border-radius: calc(var(--radius) - 1px);
 }
 
 /* ── base card ── */
