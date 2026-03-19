@@ -53,3 +53,6 @@
 .theme-toggle:hover {
   border-color: #3a3a3a;
 }
+
+:root .theme-toggle { color: #ffffff; }
+[data-theme="light"] .theme-toggle { color: #111111; }
