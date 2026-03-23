@@ -38,10 +38,20 @@ func main() {
 	}
 	ssmClient := ssm.NewFromConfig(awsCfg)
 
-	// Fetch admin password from SSM
-	adminAuth, err := auth.New(ctx, ssmClient, "/cramersmith/admin-password")
+	// Fetch admin password from SSM; also load shortcut token if present.
+	authParams := []string{"/cramersmith/admin-password"}
+	_, err = ssmClient.GetParameter(ctx, &ssm.GetParameterInput{
+		Name:           strPtr("/cramersmith/shortcut-token"),
+		WithDecryption: boolPtr(true),
+	})
 	if err != nil {
-		log.Fatalf("failed to load admin password from SSM: %v", err)
+		log.Println("shortcut token not found in SSM — shortcut auth disabled")
+	} else {
+		authParams = append(authParams, "/cramersmith/shortcut-token")
+	}
+	adminAuth, err := auth.New(ctx, ssmClient, authParams...)
+	if err != nil {
+		log.Fatalf("failed to load auth tokens from SSM: %v", err)
 	}
 
 	// Fetch DB connection string from SSM

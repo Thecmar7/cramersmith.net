@@ -10,32 +10,38 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 )
 
-// Auth holds the admin password loaded from SSM at startup.
+// Auth holds valid bearer tokens loaded from SSM at startup.
 type Auth struct {
-	password string
+	tokens []string
 }
 
-// New fetches the admin password from SSM Parameter Store.
-func New(ctx context.Context, client *ssm.Client, paramName string) (*Auth, error) {
-	out, err := client.GetParameter(ctx, &ssm.GetParameterInput{
-		Name:           aws.String(paramName),
-		WithDecryption: aws.Bool(true),
-	})
-	if err != nil {
-		return nil, err
+// New fetches one or more bearer tokens from SSM Parameter Store.
+func New(ctx context.Context, client *ssm.Client, paramNames ...string) (*Auth, error) {
+	a := &Auth{}
+	for _, name := range paramNames {
+		out, err := client.GetParameter(ctx, &ssm.GetParameterInput{
+			Name:           aws.String(name),
+			WithDecryption: aws.Bool(true),
+		})
+		if err != nil {
+			return nil, err
+		}
+		a.tokens = append(a.tokens, *out.Parameter.Value)
 	}
-	return &Auth{password: *out.Parameter.Value}, nil
+	return a, nil
 }
 
-// Middleware rejects requests that don't carry the correct password in
-// the Authorization: Bearer <password> header.
+// Middleware rejects requests that don't carry a valid token in
+// the Authorization: Bearer <token> header.
 func (a *Auth) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if subtle.ConstantTimeCompare([]byte(token), []byte(a.password)) != 1 {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
-			return
+		for _, valid := range a.tokens {
+			if subtle.ConstantTimeCompare([]byte(token), []byte(valid)) == 1 {
+				next.ServeHTTP(w, r)
+				return
+			}
 		}
-		next.ServeHTTP(w, r)
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
 	})
 }
