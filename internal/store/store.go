@@ -19,6 +19,18 @@ type Post struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// DiceRoll mirrors the dice_rolls table.
+type DiceRoll struct {
+	ID        int       `json:"id"`
+	RollType  string    `json:"roll_type"`
+	DiceCount int       `json:"dice_count"`
+	DieSize   int       `json:"die_size"`
+	Modifier  int       `json:"modifier"`
+	Rolls     []int32   `json:"rolls"`
+	Total     int       `json:"total"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 // Store holds the DB pool and pre-loaded query strings.
 type Store struct {
 	db      *pgxpool.Pool
@@ -145,4 +157,31 @@ func (s *Store) IncrementAndGetVisits(ctx context.Context) (int64, error) {
 	var count int64
 	err := s.db.QueryRow(ctx, s.query("IncrementAndGetVisits")).Scan(&count)
 	return count, err
+}
+
+// SaveDiceRoll inserts a dice roll and returns it.
+func (s *Store) SaveDiceRoll(ctx context.Context, rollType string, diceCount, dieSize, modifier int, rolls []int32, total int) (*DiceRoll, error) {
+	var r DiceRoll
+	err := s.db.QueryRow(ctx, s.query("SaveDiceRoll"), rollType, diceCount, dieSize, modifier, rolls, total).
+		Scan(&r.ID, &r.RollType, &r.DiceCount, &r.DieSize, &r.Modifier, &r.Rolls, &r.Total, &r.CreatedAt)
+	return &r, err
+}
+
+// ListDiceRolls returns the 50 most recent dice rolls.
+func (s *Store) ListDiceRolls(ctx context.Context) ([]DiceRoll, error) {
+	rows, err := s.db.Query(ctx, s.query("ListDiceRolls"))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var rolls []DiceRoll
+	for rows.Next() {
+		var r DiceRoll
+		if err := rows.Scan(&r.ID, &r.RollType, &r.DiceCount, &r.DieSize, &r.Modifier, &r.Rolls, &r.Total, &r.CreatedAt); err != nil {
+			return nil, err
+		}
+		rolls = append(rolls, r)
+	}
+	return rolls, rows.Err()
 }

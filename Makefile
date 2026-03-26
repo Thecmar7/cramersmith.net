@@ -1,5 +1,5 @@
-ECR_URI        = YOUR-ECR-URI
-APP_RUNNER_ARN = YOUR-APP-RUNNER-ARN
+ECR_URI        = 068072250063.dkr.ecr.us-west-2.amazonaws.com/cramersmith-net
+APP_RUNNER_ARN = arn:aws:apprunner:us-west-2:068072250063:service/cramersmith-net/c264e5d8d15144e88574545eee52efa4
 REGION         = us-west-2
 
 .PHONY: dev run build deploy login status clean
@@ -20,14 +20,14 @@ run: build
 
 # Build the React frontend then compile the Go binary with it embedded.
 build:
-	npm run build --prefix frontend
+	VITE_GIT_HASH=$$(git rev-parse HEAD) VITE_GIT_DATE=$$(git log -1 --format=%Y-%m-%d) npm run build --prefix frontend
 	go build -o server .
 
 ## ── Deploy ───────────────────────────────────────────────────────────────────
 
 # Build and push a new Docker image. App Runner redeploys automatically.
 deploy: login
-	npm run build --prefix frontend
+	VITE_GIT_HASH=$$(git rev-parse HEAD) VITE_GIT_DATE=$$(git log -1 --format=%Y-%m-%d) npm run build --prefix frontend
 	docker build --platform linux/amd64 -t cramersmith-net .
 	docker tag cramersmith-net:latest $(ECR_URI):latest
 	docker push $(ECR_URI):latest
@@ -60,3 +60,4 @@ migrate:
 	$(eval DB_URL := $(shell aws ssm get-parameter --region $(REGION) --name /cramersmith/db-url --with-decryption --query Parameter.Value --output text))
 	psql "$(DB_URL)" -f db/migrations/001_create_posts.sql
 	psql "$(DB_URL)" -f db/migrations/002_create_visits.sql
+	psql "$(DB_URL)" -f db/migrations/003_create_dice_rolls.sql

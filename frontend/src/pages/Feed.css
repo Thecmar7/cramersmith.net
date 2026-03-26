@@ -101,3 +101,7 @@
   line-height: 1.6;
   color: var(--text-muted);
 }
+
+.feed-links-section {
+  margin-top: 40px;
+}

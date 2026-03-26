@@ -1,0 +1,47 @@
+.conditions-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.conditions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  flex: 1;
+  margin-top: 4px;
+}
+
+.condition-row {
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.condition-row:hover {
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+
+.condition-row--open {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
+.condition-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.condition-row--open .condition-name {
+  margin-bottom: 5px;
+}
+
+.condition-desc {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}

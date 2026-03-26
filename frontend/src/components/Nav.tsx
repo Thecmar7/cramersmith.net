@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
+import { useVibe } from '../context/VibeContext'
 import './Nav.css'
 
 const SunIcon = () => (
@@ -22,11 +23,32 @@ const MoonIcon = () => (
   </svg>
 )
 
+const BriefcaseIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+    <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+  </svg>
+)
+
+const D20Icon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2 L20 7 L20 17 L12 22 L4 17 L4 7 Z"/>
+    <path d="M12 2 L4 17 M12 2 L20 17 M4 7 L20 7 M4 17 L20 17"/>
+  </svg>
+)
+
+const SparkleIcon = () => (
+  <svg width="16" height="16" viewBox="4 2 16 17" fill="currentColor">
+    <path d="M12 2 L13.5 9 L20 10.5 L13.5 12 L12 19 L10.5 12 L4 10.5 L10.5 9 Z"/>
+  </svg>
+)
+
 export default function Nav() {
   const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem('theme')
     return saved ? saved === 'dark' : true
   })
+  const { vibe, setVibe } = useVibe()
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
@@ -43,6 +65,14 @@ export default function Nav() {
         <NavLink to="/feed" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
           Feed
         </NavLink>
+        <button
+          className="theme-toggle"
+          onClick={() => setVibe(vibe === 'professional' ? 'fun' : vibe === 'fun' ? 'dnd' : 'professional')}
+          aria-label="Toggle vibe"
+          title={vibe === 'professional' ? 'Switch to fun mode' : vibe === 'fun' ? 'Switch to D&D mode' : 'Switch to professional mode'}
+        >
+          {vibe === 'professional' ? <BriefcaseIcon /> : vibe === 'fun' ? <SparkleIcon /> : <D20Icon />}
+        </button>
         <button className="theme-toggle" onClick={() => setDark(d => !d)} aria-label="Toggle theme">
           {dark ? <MoonIcon /> : <SunIcon />}
         </button>

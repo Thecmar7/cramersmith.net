@@ -54,6 +54,8 @@ func NewRouter(s *store.Store, a *auth.Auth, bsky *bluesky.Client) http.Handler 
 	mux.HandleFunc("GET /posts", handleListPosts(s))
 	mux.Handle("POST /posts", rl.Middleware(a.Middleware(http.HandlerFunc(handleCreatePost(s, bsky)))))
 	mux.Handle("DELETE /posts/{id}", rl.Middleware(a.Middleware(http.HandlerFunc(handleDeletePost(s)))))
+	mux.HandleFunc("GET /dice-rolls", handleListDiceRolls(s))
+	mux.Handle("POST /dice-rolls", rl.Middleware(a.Middleware(http.HandlerFunc(handleSaveDiceRoll(s)))))
 
 	return securityHeaders(mux)
 }
@@ -164,6 +166,50 @@ func handleDeletePost(s *store.Store) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func handleListDiceRolls(s *store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		rolls, err := s.ListDiceRolls(r.Context())
+		if err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		if rolls == nil {
+			rolls = []store.DiceRoll{}
+		}
+		writeJSON(w, http.StatusOK, rolls)
+	}
+}
+
+func handleSaveDiceRoll(s *store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			RollType  string  `json:"roll_type"`
+			DiceCount int     `json:"dice_count"`
+			DieSize   int     `json:"die_size"`
+			Modifier  int     `json:"modifier"`
+			Rolls     []int32 `json:"rolls"`
+			Total     int     `json:"total"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "bad request", http.StatusBadRequest)
+			return
+		}
+		if body.RollType == "" {
+			body.RollType = "general"
+		}
+		if body.DiceCount < 1 || body.DieSize < 1 || len(body.Rolls) == 0 {
+			http.Error(w, "invalid roll", http.StatusBadRequest)
+			return
+		}
+		roll, err := s.SaveDiceRoll(r.Context(), body.RollType, body.DiceCount, body.DieSize, body.Modifier, body.Rolls, body.Total)
+		if err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusCreated, roll)
 	}
 }
 

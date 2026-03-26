@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import './Feed.css'
+import '../components/BentoGrid.css'
+import LinksCard from '../components/cards/LinksCard'
 
 interface Post {
   id: number
@@ -67,6 +69,10 @@ export default function Feed() {
             )}
           </article>
         ))}
+      </div>
+
+      <div className="feed-links-section">
+        <LinksCard />
       </div>
     </div>
   )

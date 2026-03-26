@@ -1,0 +1,143 @@
+.dccheck-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dccheck-row {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.dccheck-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dccheck-field-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.dccheck-quick {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.dc-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 5px 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.dc-btn-number {
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.dc-btn-label {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.dc-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.dc-btn--active {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.dccheck-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  width: fit-content;
+}
+
+.dccheck-stepper button {
+  background: var(--surface-2);
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+}
+
+.dccheck-stepper button:hover {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.dccheck-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 36px;
+  text-align: center;
+  padding: 4px 6px;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.dccheck-result {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+
+.dccheck-result--pass {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.dccheck-result--fail {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.dccheck-outcome {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.dccheck-result--pass .dccheck-outcome { color: #22c55e; }
+.dccheck-result--fail .dccheck-outcome { color: #ef4444; }
+
+.dccheck-detail {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: monospace;
+}

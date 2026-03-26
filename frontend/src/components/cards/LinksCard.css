@@ -6,15 +6,15 @@
 .links-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
   margin-top: 4px;
 }
 
 .link-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding: 7px 10px;
   border-radius: var(--radius-sm);
   background: var(--surface-2);
   border: 1px solid var(--border);
