@@ -23,7 +23,7 @@
   --text-muted: #888;
 }
 
-[data-vibe="dnd"] {
+[data-page="dnd"] {
   --accent:     #d4a843;
   --accent-dim: rgba(212, 168, 67, 0.12);
   --bg:         #0c0a08;
@@ -34,7 +34,7 @@
   --radius-sm:  6px;
 }
 
-[data-theme="light"][data-vibe="dnd"] {
+[data-theme="light"][data-page="dnd"] {
   --accent:     #a07828;
   --accent-dim: rgba(160, 120, 40, 0.10);
   --bg:         #fdf8f0;

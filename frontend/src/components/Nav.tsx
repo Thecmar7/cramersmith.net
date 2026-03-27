@@ -23,6 +23,30 @@ const MoonIcon = () => (
   </svg>
 )
 
+const PortfolioIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <rect x="14" y="14" width="7" height="7" rx="1"/>
+  </svg>
+)
+
+const FeedIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="4" y1="6" x2="20" y2="6"/>
+    <line x1="4" y1="12" x2="20" y2="12"/>
+    <line x1="4" y1="18" x2="14" y2="18"/>
+  </svg>
+)
+
+const D20Icon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2 L20 7 L20 17 L12 22 L4 17 L4 7 Z"/>
+    <path d="M12 2 L4 17 M12 2 L20 17 M4 7 L20 7 M4 17 L20 17"/>
+  </svg>
+)
+
 const BriefcaseIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
@@ -30,12 +54,6 @@ const BriefcaseIcon = () => (
   </svg>
 )
 
-const D20Icon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 2 L20 7 L20 17 L12 22 L4 17 L4 7 Z"/>
-    <path d="M12 2 L4 17 M12 2 L20 17 M4 7 L20 7 M4 17 L20 17"/>
-  </svg>
-)
 
 const SparkleIcon = () => (
   <svg width="16" height="16" viewBox="4 2 16 17" fill="currentColor">
@@ -60,18 +78,21 @@ export default function Nav() {
       <span className="nav-name">Cramer Smith</span>
       <div className="nav-links">
         <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          Portfolio
+          <PortfolioIcon /> Portfolio
         </NavLink>
         <NavLink to="/feed" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          Feed
+          <FeedIcon /> Feed
+        </NavLink>
+        <NavLink to="/dnd" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+          <D20Icon /> DnD
         </NavLink>
         <button
           className="theme-toggle"
-          onClick={() => setVibe(vibe === 'professional' ? 'fun' : vibe === 'fun' ? 'dnd' : 'professional')}
+          onClick={() => setVibe(vibe === 'professional' ? 'fun' : 'professional')}
           aria-label="Toggle vibe"
-          title={vibe === 'professional' ? 'Switch to fun mode' : vibe === 'fun' ? 'Switch to D&D mode' : 'Switch to professional mode'}
+          title={vibe === 'professional' ? 'Switch to fun mode' : 'Switch to professional mode'}
         >
-          {vibe === 'professional' ? <BriefcaseIcon /> : vibe === 'fun' ? <SparkleIcon /> : <D20Icon />}
+          {vibe === 'professional' ? <BriefcaseIcon /> : <SparkleIcon />}
         </button>
         <button className="theme-toggle" onClick={() => setDark(d => !d)} aria-label="Toggle theme">
           {dark ? <MoonIcon /> : <SunIcon />}

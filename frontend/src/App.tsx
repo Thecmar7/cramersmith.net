@@ -4,6 +4,7 @@ import Nav from './components/Nav'
 import Portfolio from './pages/Portfolio'
 import Feed from './pages/Feed'
 import Admin from './pages/Admin'
+import DnDScreen from './pages/DnDScreen'
 import DeployBadge from './components/DeployBadge'
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
       <Routes>
         <Route path="/"      element={<Portfolio />} />
         <Route path="/feed"  element={<Feed />} />
+        <Route path="/dnd"   element={<DnDScreen />} />
         <Route path="/admin" element={<Admin />} />
       </Routes>
       <DeployBadge />

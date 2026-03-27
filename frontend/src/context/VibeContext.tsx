@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 
-type Vibe = 'professional' | 'fun' | 'dnd'
+type Vibe = 'professional' | 'fun'
 
 interface VibeContextType {
   vibe: Vibe
@@ -13,7 +13,7 @@ const VibeContext = createContext<VibeContextType | null>(null)
 export function VibeProvider({ children }: { children: ReactNode }) {
   const [vibe, setVibeState] = useState<Vibe>(() => {
     const param = new URLSearchParams(window.location.search).get('vibe')
-    if (param === 'fun' || param === 'professional' || param === 'dnd') return param
+    if (param === 'fun' || param === 'professional') return param
     return (localStorage.getItem('vibe') as Vibe) || 'professional'
   })
 
