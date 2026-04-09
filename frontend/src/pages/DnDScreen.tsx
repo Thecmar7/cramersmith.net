@@ -3,6 +3,7 @@ import '../components/BentoGrid.css'
 import DiceRollerCard from '../components/cards/DiceRollerCard'
 import DCCheckCard from '../components/cards/DCCheckCard'
 import ConditionsCard from '../components/cards/ConditionsCard'
+import InitiativeTrackerCard from '../components/cards/InitiativeTrackerCard'
 
 export default function DnDScreen() {
   useEffect(() => {
@@ -15,6 +16,7 @@ export default function DnDScreen() {
       <DiceRollerCard />
       <DCCheckCard />
       <ConditionsCard />
+      <InitiativeTrackerCard />
     </div>
   )
 }
