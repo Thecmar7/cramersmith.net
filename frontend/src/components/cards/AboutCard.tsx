@@ -17,7 +17,7 @@ export default function AboutCard() {
         <>
           <p className="about-text">
             Outside of work, I build things with my hands. Home improvement projects, furniture in
-            the shop, the occasional deck — whatever the project calls for. I DM D&amp;D campaigns
+            the shop, whatever the project calls for. I DM D&amp;D campaigns
             for my friends, stream on Twitch, and am always in the middle of something.
             Happiest when I'm making.
           </p>
@@ -30,7 +30,7 @@ export default function AboutCard() {
       ) : (
         <>
           <p className="about-text">
-            Software engineer with <strong>8 years of experience</strong> across diverse domains —
+            Software engineer with <strong>8 years of experience</strong> across diverse domains,
             from CI/CD infrastructure at massive scale to full-stack product work at startups.
             I ship reliable, well-tested code fast, ramp quickly on complex systems, and communicate
             clearly across teams and with customers.

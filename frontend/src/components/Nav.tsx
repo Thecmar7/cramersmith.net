@@ -78,13 +78,13 @@ export default function Nav() {
       <span className="nav-name">Cramer Smith</span>
       <div className="nav-links">
         <NavLink to="/" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          <PortfolioIcon /> Portfolio
+          <PortfolioIcon /> <span>Portfolio</span>
         </NavLink>
         <NavLink to="/feed" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          <FeedIcon /> Feed
+          <FeedIcon /> <span>Feed</span>
         </NavLink>
         <NavLink to="/dnd" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-          <D20Icon /> DnD
+          <D20Icon /> <span>DnD</span>
         </NavLink>
         <button
           className="theme-toggle"

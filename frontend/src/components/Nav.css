@@ -59,3 +59,9 @@
 
 :root .theme-toggle { color: #ffffff; }
 [data-theme="light"] .theme-toggle { color: #111111; }
+
+@media (max-width: 480px) {
+  .nav-link span { display: none; }
+  .nav-link { padding: 6px 10px; }
+  .nav-links { gap: 2px; }
+}
