@@ -1,6 +1,7 @@
 package api
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -51,6 +52,8 @@ func NewRouter(s *store.Store, a *auth.Auth, bsky *bluesky.Client) http.Handler 
 
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("GET /visits", handleVisits(s))
+	mux.Handle("GET /referral-links", rl.Middleware(a.Middleware(http.HandlerFunc(handleListReferralLinks(s)))))
+	mux.Handle("POST /referral-links", rl.Middleware(a.Middleware(http.HandlerFunc(handleCreateReferralLink(s)))))
 	mux.HandleFunc("GET /posts", handleListPosts(s))
 	mux.Handle("POST /posts", rl.Middleware(a.Middleware(http.HandlerFunc(handleCreatePost(s, bsky)))))
 	mux.Handle("DELETE /posts/{id}", rl.Middleware(a.Middleware(http.HandlerFunc(handleDeletePost(s)))))
@@ -92,7 +95,45 @@ func handleVisits(s *store.Store) http.HandlerFunc {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
+		if ref := r.URL.Query().Get("ref"); ref != "" {
+			// Fire-and-forget; unknown tokens are silently ignored by the query.
+			_ = s.IncrementReferralLink(r.Context(), ref)
+		}
 		writeJSON(w, http.StatusOK, map[string]int64{"count": count})
+	}
+}
+
+func handleListReferralLinks(s *store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		links, err := s.ListReferralLinks(r.Context())
+		if err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		if links == nil {
+			links = []store.ReferralLink{}
+		}
+		writeJSON(w, http.StatusOK, links)
+	}
+}
+
+func handleCreateReferralLink(s *store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Label string `json:"label"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Label == "" {
+			http.Error(w, "label is required", http.StatusBadRequest)
+			return
+		}
+		h := sha256.Sum256([]byte(body.Label))
+		token := fmt.Sprintf("%x", h)[:12]
+		link, err := s.CreateReferralLink(r.Context(), token, body.Label)
+		if err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, http.StatusCreated, link)
 	}
 }
 

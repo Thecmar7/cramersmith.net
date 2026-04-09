@@ -9,7 +9,7 @@ REGION         = us-west-2
 # Start the Vite dev server with hot reload on http://localhost:5173
 # Use this when working on the frontend — changes appear instantly.
 dev:
-	cd frontend && npm run dev
+	VITE_GIT_HASH=$$(git rev-parse HEAD) VITE_GIT_DATE=$$(git log -1 --format=%Y-%m-%d) npm run dev --prefix frontend
 
 # Build everything and run the full Go server on http://localhost:8080
 # Use this to test exactly what will be deployed (no hot reload).
@@ -61,3 +61,4 @@ migrate:
 	psql "$(DB_URL)" -f db/migrations/001_create_posts.sql
 	psql "$(DB_URL)" -f db/migrations/002_create_visits.sql
 	psql "$(DB_URL)" -f db/migrations/003_create_dice_rolls.sql
+	psql "$(DB_URL)" -f db/migrations/004_create_referral_links.sql

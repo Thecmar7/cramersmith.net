@@ -160,6 +160,34 @@
   color: #ef4444;
 }
 
+.admin-referrals {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-referral-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-referral-form .admin-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-ref-token {
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: var(--text-muted);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
 .admin-bsky-label {
   display: flex;
   align-items: center;

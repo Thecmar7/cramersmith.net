@@ -36,6 +36,14 @@
   font-weight: 400;
 }
 
+.hero-visits {
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.5;
+  margin-top: 14px;
+  letter-spacing: 0.04em;
+}
+
 .hero-accent-bar {
   position: absolute;
   bottom: 0;

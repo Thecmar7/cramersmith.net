@@ -10,6 +10,13 @@ interface Post {
   created_at: string
 }
 
+interface ReferralLink {
+  token: string
+  label: string
+  count: number
+  created_at: string
+}
+
 export default function Admin() {
   const [password, setPassword] = useState(() => sessionStorage.getItem('adminKey') || '')
   const [authed, setAuthed]     = useState(false)
@@ -20,14 +27,43 @@ export default function Admin() {
   const [urlTitle, setUrlTitle] = useState('')
   const [status, setStatus]     = useState('')
   const [postToBsky, setPostToBsky] = useState(false)
+  const [refLinks, setRefLinks]     = useState<ReferralLink[]>([])
+  const [refLabel, setRefLabel]     = useState('')
+  const [refStatus, setRefStatus]   = useState('')
 
   useEffect(() => {
-    if (password) loadPosts()
+    if (password) { loadPosts(); loadRefLinks() }
   }, [])
 
   function savePassword() {
     sessionStorage.setItem('adminKey', password)
     loadPosts()
+    loadRefLinks()
+  }
+
+  async function loadRefLinks() {
+    const r = await fetch('/api/referral-links', {
+      headers: { Authorization: `Bearer ${password}` },
+    })
+    if (r.ok) setRefLinks(await r.json())
+  }
+
+  async function createRefLink() {
+    if (!refLabel.trim()) return
+    setRefStatus('Generating...')
+    const r = await fetch('/api/referral-links', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${password}` },
+      body: JSON.stringify({ label: refLabel.trim() }),
+    })
+    if (r.ok) {
+      setRefLabel('')
+      setRefStatus('Created!')
+      loadRefLinks()
+      setTimeout(() => setRefStatus(''), 2000)
+    } else {
+      setRefStatus('Error.')
+    }
   }
 
   async function loadPosts() {
@@ -173,6 +209,40 @@ export default function Admin() {
             <button className="admin-delete" onClick={() => deletePost(post.id)}>Delete</button>
           </div>
         ))}
+      </div>
+
+      <div className="admin-referrals">
+        <h2 className="admin-section-title">Referral Links</h2>
+        <div className="admin-referral-form">
+          <input
+            className="admin-input"
+            type="text"
+            placeholder="Label (e.g. instagram bio)"
+            value={refLabel}
+            onChange={e => setRefLabel(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && createRefLink()}
+          />
+          <button className="admin-btn" onClick={createRefLink}>Generate</button>
+          {refStatus && <p className="admin-status">{refStatus}</p>}
+        </div>
+        {refLinks.map(link => {
+          const url = `${window.location.origin}/?ref=${link.token}`
+          return (
+            <div key={link.token} className="admin-post">
+              <div className="admin-post-info">
+                <span className="admin-post-type">{link.count}</span>
+                <span className="admin-post-content">{link.label}</span>
+                <span className="admin-ref-token">{link.token}</span>
+              </div>
+              <button
+                className="admin-delete"
+                onClick={() => navigator.clipboard.writeText(url)}
+              >
+                Copy
+              </button>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

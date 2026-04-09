@@ -152,6 +152,52 @@ func (s *Store) DeletePost(ctx context.Context, id int) error {
 	return err
 }
 
+// ReferralLink mirrors the referral_links table.
+type ReferralLink struct {
+	Token     string    `json:"token"`
+	Label     string    `json:"label"`
+	Count     int64     `json:"count"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// CreateReferralLink inserts a new referral link and returns it.
+// Returns nil, nil if the token already exists (ON CONFLICT DO NOTHING).
+func (s *Store) CreateReferralLink(ctx context.Context, token, label string) (*ReferralLink, error) {
+	var r ReferralLink
+	err := s.db.QueryRow(ctx, s.query("CreateReferralLink"), token, label).
+		Scan(&r.Token, &r.Label, &r.Count, &r.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &r, nil
+}
+
+// IncrementReferralLink increments the hit count for a token.
+// Silently does nothing if the token doesn't exist.
+func (s *Store) IncrementReferralLink(ctx context.Context, token string) error {
+	_, err := s.db.Exec(ctx, s.query("IncrementReferralLink"), token)
+	return err
+}
+
+// ListReferralLinks returns all referral links newest-first.
+func (s *Store) ListReferralLinks(ctx context.Context) ([]ReferralLink, error) {
+	rows, err := s.db.Query(ctx, s.query("ListReferralLinks"))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var links []ReferralLink
+	for rows.Next() {
+		var r ReferralLink
+		if err := rows.Scan(&r.Token, &r.Label, &r.Count, &r.CreatedAt); err != nil {
+			return nil, err
+		}
+		links = append(links, r)
+	}
+	return links, rows.Err()
+}
+
 // IncrementAndGetVisits atomically increments the counter and returns the new value.
 func (s *Store) IncrementAndGetVisits(ctx context.Context) (int64, error) {
 	var count int64
