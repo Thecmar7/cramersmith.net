@@ -11,12 +11,18 @@ import (
 
 // Post mirrors the posts table.
 type Post struct {
-	ID        int       `json:"id"`
-	Type      string    `json:"type"`
-	Content   string    `json:"content"`
-	URL       *string   `json:"url"`
-	URLTitle  *string   `json:"url_title"`
-	CreatedAt time.Time `json:"created_at"`
+	ID          int        `json:"id"`
+	Type        string     `json:"type"`
+	Title       *string    `json:"title"`
+	Slug        *string    `json:"slug"`
+	Content     string     `json:"content"`
+	URL         *string    `json:"url"`
+	URLTitle    *string    `json:"url_title"`
+	ImageURL    *string    `json:"image_url"`
+	Tags        []string   `json:"tags"`
+	Draft       bool       `json:"draft"`
+	PublishedAt *time.Time `json:"published_at"`
+	CreatedAt   time.Time  `json:"created_at"`
 }
 
 // DiceRoll mirrors the dice_rolls table.
@@ -119,9 +125,20 @@ func (s *Store) query(name string) string {
 	return q
 }
 
-// ListPosts returns all posts newest-first.
-func (s *Store) ListPosts(ctx context.Context) ([]Post, error) {
-	rows, err := s.db.Query(ctx, s.query("ListPosts"))
+func scanPost(row interface{ Scan(...any) error }) (Post, error) {
+	var p Post
+	if err := row.Scan(&p.ID, &p.Type, &p.Title, &p.Slug, &p.Content, &p.URL, &p.URLTitle, &p.ImageURL, &p.Tags, &p.Draft, &p.PublishedAt, &p.CreatedAt); err != nil {
+		return Post{}, err
+	}
+	if p.Tags == nil {
+		p.Tags = []string{}
+	}
+	return p, nil
+}
+
+// ListPosts returns published posts newest-first. Pass a non-nil tag to filter by tag.
+func (s *Store) ListPosts(ctx context.Context, tag *string) ([]Post, error) {
+	rows, err := s.db.Query(ctx, s.query("ListPosts"), tag)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +146,27 @@ func (s *Store) ListPosts(ctx context.Context) ([]Post, error) {
 
 	var posts []Post
 	for rows.Next() {
-		var p Post
-		if err := rows.Scan(&p.ID, &p.Type, &p.Content, &p.URL, &p.URLTitle, &p.CreatedAt); err != nil {
+		p, err := scanPost(rows)
+		if err != nil {
+			return nil, err
+		}
+		posts = append(posts, p)
+	}
+	return posts, rows.Err()
+}
+
+// ListAllPosts returns all posts including drafts (admin only).
+func (s *Store) ListAllPosts(ctx context.Context) ([]Post, error) {
+	rows, err := s.db.Query(ctx, s.query("ListAllPosts"))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []Post
+	for rows.Next() {
+		p, err := scanPost(rows)
+		if err != nil {
 			return nil, err
 		}
 		posts = append(posts, p)
@@ -139,11 +175,39 @@ func (s *Store) ListPosts(ctx context.Context) ([]Post, error) {
 }
 
 // CreatePost inserts a new post and returns it.
-func (s *Store) CreatePost(ctx context.Context, postType, content string, url, urlTitle *string) (*Post, error) {
-	var p Post
-	err := s.db.QueryRow(ctx, s.query("CreatePost"), postType, content, url, urlTitle).
-		Scan(&p.ID, &p.Type, &p.Content, &p.URL, &p.URLTitle, &p.CreatedAt)
-	return &p, err
+// Set draft=true to save without publishing; draft=false publishes immediately.
+func (s *Store) CreatePost(ctx context.Context, postType string, title, slug *string, content string, url, urlTitle, imageURL *string, tags []string, draft bool) (*Post, error) {
+	if tags == nil {
+		tags = []string{}
+	}
+	var publishedAt *time.Time
+	if !draft {
+		now := time.Now()
+		publishedAt = &now
+	}
+	p, err := scanPost(s.db.QueryRow(ctx, s.query("CreatePost"), postType, title, slug, content, url, urlTitle, imageURL, tags, draft, publishedAt))
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// GetPostBySlug returns a single published post by slug.
+func (s *Store) GetPostBySlug(ctx context.Context, slug string) (*Post, error) {
+	p, err := scanPost(s.db.QueryRow(ctx, s.query("GetPostBySlug"), slug))
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// PublishPost marks a draft as published and records the publish time.
+func (s *Store) PublishPost(ctx context.Context, id int) (*Post, error) {
+	p, err := scanPost(s.db.QueryRow(ctx, s.query("PublishPost"), id))
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
 }
 
 // DeletePost removes a post by ID.

@@ -19,6 +19,33 @@
   margin-bottom: 16px;
 }
 
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.admin-topbar .admin-title {
+  margin-bottom: 0;
+}
+
+.admin-logout {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.admin-logout:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
 .admin-form {
   display: flex;
   flex-direction: column;
@@ -188,6 +215,69 @@
   flex-shrink: 0;
 }
 
+.admin-image-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-image-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  align-self: flex-start;
+}
+
+.admin-image-upload:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.admin-image-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: flex-start;
+}
+
+.admin-image-thumb {
+  max-width: 320px;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.admin-image-remove {
+  background: transparent;
+  border: 1px solid #3a3a3a;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.admin-image-remove:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.admin-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .admin-bsky-label {
   display: flex;
   align-items: center;
@@ -195,4 +285,46 @@
   font-size: 0.875rem;
   color: var(--text-muted);
   cursor: pointer;
+}
+
+.admin-bsky-label input:disabled + * {
+  opacity: 0.4;
+}
+
+.admin-post--draft {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.admin-draft-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  padding: 1px 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.admin-post-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.admin-publish {
+  background: transparent;
+  border: 1px solid #3a3a3a;
+  color: var(--accent);
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.admin-publish:hover {
+  border-color: var(--accent);
 }

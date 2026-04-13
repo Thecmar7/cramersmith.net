@@ -62,3 +62,7 @@ migrate:
 	psql "$(DB_URL)" -f db/migrations/002_create_visits.sql
 	psql "$(DB_URL)" -f db/migrations/003_create_dice_rolls.sql
 	psql "$(DB_URL)" -f db/migrations/004_create_referral_links.sql
+	psql "$(DB_URL)" -f db/migrations/005_add_image_url.sql
+	psql "$(DB_URL)" -f db/migrations/006_add_tags.sql
+	psql "$(DB_URL)" -f db/migrations/007_add_drafts.sql
+	psql "$(DB_URL)" -f db/migrations/008_add_blog_type.sql

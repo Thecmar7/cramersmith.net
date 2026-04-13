@@ -1,6 +1,6 @@
 # cramersmith.net
 
-Personal portfolio and microblog at [cramersmith.net](https://cramersmith.net).
+Personal portfolio and blog at [cramersmith.net](https://cramersmith.net).
 
 ## Stack
 
@@ -63,8 +63,26 @@ See [docs/deployment.md](docs/deployment.md) for the full AWS setup walkthrough.
 | Path | Description |
 |---|---|
 | `/` | Portfolio — bento grid with bio, experience, links |
-| `/feed` | Public microblog feed |
+| `/feed` | Public feed — thoughts, links, and blog posts with tag filtering |
+| `/blog/:slug` | Individual blog post page — full markdown, images, OG meta tags |
 | `/admin` | Password-protected post editor |
+| `/rss.xml` | RSS feed of published blog posts |
+
+## Post Types
+
+The feed supports three types of posts:
+
+| Type | Fields | Use case |
+|---|---|---|
+| `thought` | content, tags, image_url | Short text posts |
+| `link` | url, url_title, content, tags | Shared links with optional commentary |
+| `blog` | title, slug, content (markdown), tags, image_url, draft | Long-form articles with individual pages |
+
+Blog posts support full markdown formatting and can be saved as drafts before publishing. All post types support tags (hashtag-style categories) and an optional header image.
+
+## Image Hosting
+
+Images are referenced by URL — upload to any image host (Cloudflare Images, Imgur, S3, etc.) and paste the URL into the admin. S3 direct-upload via the admin is a planned future improvement.
 
 ## Posting from iPhone
 

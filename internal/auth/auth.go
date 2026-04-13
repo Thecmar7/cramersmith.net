@@ -31,6 +31,17 @@ func New(ctx context.Context, client *ssm.Client, paramNames ...string) (*Auth, 
 	return a, nil
 }
 
+// Valid returns true if the request carries a valid bearer token.
+func (a *Auth) Valid(r *http.Request) bool {
+	token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	for _, valid := range a.tokens {
+		if subtle.ConstantTimeCompare([]byte(token), []byte(valid)) == 1 {
+			return true
+		}
+	}
+	return false
+}
+
 // Middleware rejects requests that don't carry a valid token in
 // the Authorization: Bearer <token> header.
 func (a *Auth) Middleware(next http.Handler) http.Handler {

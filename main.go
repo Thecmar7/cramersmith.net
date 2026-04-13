@@ -9,6 +9,7 @@ import (
 	"os"
 
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 
 	"cramersmith.net/internal/api"
@@ -86,6 +87,21 @@ func main() {
 		log.Println("bluesky cross-posting enabled")
 	}
 
+	// Load S3 images bucket from SSM (optional — image uploads disabled if missing)
+	var s3Client *s3.Client
+	var imagesBucket string
+	bucketParam, err := ssmClient.GetParameter(ctx, &ssm.GetParameterInput{
+		Name:           strPtr("/cramersmith/images-bucket"),
+		WithDecryption: boolPtr(false),
+	})
+	if err != nil {
+		log.Println("images bucket not found in SSM — image uploads disabled")
+	} else {
+		s3Client = s3.NewFromConfig(awsCfg)
+		imagesBucket = *bucketParam.Parameter.Value
+		log.Printf("image uploads enabled (bucket: %s)", imagesBucket)
+	}
+
 	// Set up routes
 	distFS, err := fs.Sub(staticFiles, "frontend/dist")
 	if err != nil {
@@ -93,7 +109,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/api/", http.StripPrefix("/api", api.NewRouter(s, adminAuth, bskyClient)))
+	mux.Handle("/api/", http.StripPrefix("/api", api.NewRouter(s, adminAuth, bskyClient, s3Client, imagesBucket)))
 	mux.Handle("/", spaHandler(distFS))
 
 	log.Printf("listening on :%s", port)
