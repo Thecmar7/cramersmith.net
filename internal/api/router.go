@@ -4,9 +4,11 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -27,15 +29,34 @@ import (
 
 // rateLimiter tracks failed auth attempts per IP and blocks after 10 failures in 15 minutes.
 type rateLimiter struct {
-	mu      sync.Mutex
-	hits    map[string][]time.Time
+	mu   sync.Mutex
+	hits map[string][]time.Time
 }
 
 func newRateLimiter() *rateLimiter {
 	return &rateLimiter{hits: make(map[string][]time.Time)}
 }
 
-func (rl *rateLimiter) allow(ip string) bool {
+// clientIP extracts the real client IP from X-Forwarded-For (set by App Runner's
+// load balancer), falling back to RemoteAddr when the header is absent.
+func clientIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		// X-Forwarded-For may be a comma-separated list; the leftmost is the client.
+		if idx := strings.Index(xff, ","); idx >= 0 {
+			return strings.TrimSpace(xff[:idx])
+		}
+		return strings.TrimSpace(xff)
+	}
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return ip
+}
+
+// blocked reports whether ip has 10+ recent auth failures. It prunes stale
+// entries but does NOT record a new hit — call record() after a failed response.
+func (rl *rateLimiter) blocked(ip string) bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
@@ -46,13 +67,31 @@ func (rl *rateLimiter) allow(ip string) bool {
 			recent = append(recent, t)
 		}
 	}
-	rl.hits[ip] = recent
-
-	if len(recent) >= 10 {
-		return false
+	if len(recent) == 0 {
+		delete(rl.hits, ip) // evict empty entries to prevent memory leak
+	} else {
+		rl.hits[ip] = recent
 	}
+	return len(recent) >= 10
+}
+
+// record adds one auth-failure hit for ip.
+func (rl *rateLimiter) record(ip string) {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
 	rl.hits[ip] = append(rl.hits[ip], time.Now())
-	return true
+}
+
+// statusRecorder wraps ResponseWriter to capture the HTTP status code written
+// by the inner handler, so the rate limiter can inspect it after the fact.
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (sr *statusRecorder) WriteHeader(code int) {
+	sr.status = code
+	sr.ResponseWriter.WriteHeader(code)
 }
 
 // NewRouter returns a mux with all API routes registered.
@@ -79,12 +118,16 @@ func NewRouter(st *store.Store, a *auth.Auth, bsky *bluesky.Client, s3Client *s3
 
 func (rl *rateLimiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip := r.RemoteAddr
-		if !rl.allow(ip) {
+		ip := clientIP(r)
+		if rl.blocked(ip) {
 			http.Error(w, "too many requests", http.StatusTooManyRequests)
 			return
 		}
-		next.ServeHTTP(w, r)
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(rec, r)
+		if rec.status == http.StatusUnauthorized || rec.status == http.StatusForbidden {
+			rl.record(ip)
+		}
 	})
 }
 
@@ -182,7 +225,15 @@ func handleListPosts(s *store.Store, a *auth.Auth) http.HandlerFunc {
 	}
 }
 
-var slugRe = regexp.MustCompile(`[^a-z0-9]+`)
+var (
+	slugRe    = regexp.MustCompile(`[^a-z0-9]+`)
+	mdHeading = regexp.MustCompile(`#{1,6}\s+`)
+	mdBold    = regexp.MustCompile(`\*\*(.+?)\*\*`)
+	mdItalic  = regexp.MustCompile(`\*(.+?)\*`)
+	mdCode    = regexp.MustCompile("`[^`]+`")
+	mdImage   = regexp.MustCompile(`!\[.*?\]\(.*?\)`)
+	mdLink    = regexp.MustCompile(`\[(.+?)\]\(.*?\)`)
+)
 
 func slugify(s string) string {
 	s = strings.ToLower(s)
@@ -411,4 +462,68 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(v)
+}
+
+// HandleRSSFeed returns an RSS 2.0 feed of published blog posts.
+// Registered at /rss.xml (root level, not under /api/).
+func HandleRSSFeed(s *store.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		posts, err := s.ListPosts(r.Context(), nil)
+		if err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
+		fmt.Fprint(w, xml.Header)
+		fmt.Fprint(w, `<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Cramer Smith</title>
+    <link>https://cramersmith.net</link>
+    <description>Software engineer. Thoughts, links, and writing.</description>
+    <atom:link href="https://cramersmith.net/rss.xml" rel="self" type="application/rss+xml"/>
+    <language>en-us</language>
+`)
+		for _, p := range posts {
+			if p.Type != "blog" || p.Title == nil || p.Slug == nil || p.PublishedAt == nil {
+				continue
+			}
+			link := "https://cramersmith.net/blog/" + *p.Slug
+			fmt.Fprintf(w, "    <item>\n")
+			fmt.Fprintf(w, "      <title>%s</title>\n", rssEscape(*p.Title))
+			fmt.Fprintf(w, "      <link>%s</link>\n", link)
+			fmt.Fprintf(w, "      <guid isPermaLink=\"true\">%s</guid>\n", link)
+			fmt.Fprintf(w, "      <description><![CDATA[%s]]></description>\n", rssExcerpt(p.Content))
+			fmt.Fprintf(w, "      <pubDate>%s</pubDate>\n", p.PublishedAt.UTC().Format(time.RFC1123Z))
+			fmt.Fprintf(w, "    </item>\n")
+		}
+		fmt.Fprint(w, "  </channel>\n</rss>")
+	}
+}
+
+// rssExcerpt strips markdown and truncates content to ~200 chars for feed descriptions.
+func rssExcerpt(content string) string {
+	s := mdHeading.ReplaceAllString(content, "")
+	s = mdBold.ReplaceAllString(s, "$1")
+	s = mdItalic.ReplaceAllString(s, "$1")
+	s = mdCode.ReplaceAllString(s, "")
+	s = mdImage.ReplaceAllString(s, "")
+	s = mdLink.ReplaceAllString(s, "$1")
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.TrimSpace(s)
+	if len(s) <= 200 {
+		return s
+	}
+	cut := s[:200]
+	if idx := strings.LastIndex(cut, " "); idx > 0 {
+		cut = cut[:idx]
+	}
+	return cut + "…"
+}
+
+// rssEscape XML-escapes a string for use in RSS element text content.
+func rssEscape(s string) string {
+	var b strings.Builder
+	xml.EscapeText(&b, []byte(s))
+	return b.String()
 }

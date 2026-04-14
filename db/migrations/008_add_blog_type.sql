@@ -1,6 +1,6 @@
 -- Migration 008: Add blog post type with title and slug
-ALTER TABLE posts ADD COLUMN title TEXT;
-ALTER TABLE posts ADD COLUMN slug  TEXT UNIQUE;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS slug  TEXT UNIQUE;
 
 -- Expand the type check constraint to allow 'blog'.
 ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_type_check;

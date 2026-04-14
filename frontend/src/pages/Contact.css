@@ -1,0 +1,84 @@
+.contact-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 16px 64px;
+}
+
+.contact-heading {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.contact-intro {
+  color: var(--text-muted);
+  margin: 0 0 40px;
+  line-height: 1.6;
+}
+
+.contact-section {
+  margin-bottom: 36px;
+}
+
+.contact-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.contact-email {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2px;
+  transition: border-color 0.15s;
+}
+
+.contact-email:hover {
+  border-color: var(--text);
+}
+
+.contact-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.contact-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.contact-link:hover {
+  background: var(--surface);
+  border-color: var(--text-muted);
+}
+
+.contact-link-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-width: 72px;
+}
+
+.contact-link-handle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  flex: 1;
+}
+
+.contact-link-arrow {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

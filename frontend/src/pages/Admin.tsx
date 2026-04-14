@@ -4,6 +4,8 @@ import './Admin.css'
 interface Post {
   id: number
   type: string
+  title: string | null
+  slug: string | null
   content: string
   url: string | null
   url_title: string | null
@@ -46,8 +48,10 @@ export default function Admin() {
   const [refStatus, setRefStatus]     = useState('')
 
   useEffect(() => {
-    if (password) { loadPosts(); loadRefLinks() }
-  }, [])
+    // Read from sessionStorage directly so this effect closes over nothing reactive.
+    const stored = sessionStorage.getItem('adminKey')
+    if (stored) { loadPosts(stored); loadRefLinks(stored) }
+  }, []) // intentionally mount-only; savePassword() handles subsequent loads
 
   function savePassword() {
     sessionStorage.setItem('adminKey', password)
@@ -55,9 +59,9 @@ export default function Admin() {
     loadRefLinks()
   }
 
-  async function loadRefLinks() {
+  async function loadRefLinks(pw = password) {
     const r = await fetch('/api/referral-links', {
-      headers: { Authorization: `Bearer ${password}` },
+      headers: { Authorization: `Bearer ${pw}` },
     })
     if (r.ok) setRefLinks(await r.json())
   }
@@ -80,9 +84,9 @@ export default function Admin() {
     }
   }
 
-  async function loadPosts() {
+  async function loadPosts(pw = password) {
     const r = await fetch('/api/posts?include_drafts=true', {
-      headers: { Authorization: `Bearer ${password}` },
+      headers: { Authorization: `Bearer ${pw}` },
     })
     if (r.ok) {
       setPosts(await r.json())

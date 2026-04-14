@@ -110,6 +110,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/api/", http.StripPrefix("/api", api.NewRouter(s, adminAuth, bskyClient, s3Client, imagesBucket)))
+	mux.HandleFunc("GET /rss.xml", api.HandleRSSFeed(s))
 	mux.Handle("/", spaHandler(distFS))
 
 	log.Printf("listening on :%s", port)

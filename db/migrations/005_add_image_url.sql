@@ -1,2 +1,2 @@
--- Migration 002: Add image_url to posts
-ALTER TABLE posts ADD COLUMN image_url TEXT;
+-- Migration 005: Add image_url to posts
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS image_url TEXT;

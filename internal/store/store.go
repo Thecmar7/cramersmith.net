@@ -93,14 +93,18 @@ func parseNamedQueries(content string, out map[string]string) {
 	flush := func() {
 		if currentName != "" {
 			q := strings.TrimSpace(strings.Join(lines, "\n"))
-			// strip trailing comment lines
-			var clean []string
-			for _, l := range strings.Split(q, "\n") {
+			// Strip only trailing comment-only lines so that inline SQL comments
+			// (e.g. "-- filter by tag") are preserved where they appear.
+			splitLines := strings.Split(q, "\n")
+			last := -1
+			for i, l := range splitLines {
 				if !strings.HasPrefix(strings.TrimSpace(l), "--") {
-					clean = append(clean, l)
+					last = i
 				}
 			}
-			out[currentName] = strings.TrimSpace(strings.Join(clean, "\n"))
+			if last >= 0 {
+				out[currentName] = strings.TrimSpace(strings.Join(splitLines[:last+1], "\n"))
+			}
 		}
 	}
 
